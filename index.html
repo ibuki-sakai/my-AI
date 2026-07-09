@@ -74,7 +74,7 @@
 
       try {
         // 💡 通信先を Azure の仮のドメインから「GitHub Models の本物のAPI URL」に修正！
-        const response = await fetch("https://azure.com", {
+        const response = await fetch("https://models.github.ai/inference/chat/completions", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
