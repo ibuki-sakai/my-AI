@@ -23,7 +23,7 @@
 
 <!-- 最初だけトークンを入力する画面 -->
 <div id="setup-area">
-  <h3>🔑 GitHubトークンを入力してください</h3>
+  <h3>GitHubトークンを入力してください</h3>
   <p style="font-size:12px;color:#666;">（一度入力すればブラウザに記憶されます）</p>
   <input type="password" id="token-input" placeholder="ghp_ から始まるトークンを貼り付け">
   <br>
@@ -32,7 +32,7 @@
 
 <!-- チャット画面 -->
 <div id="ai-container">
-  <div id="chat-header">🤖 独立稼働型マイAI (完全修正版)</div>
+  <div id="chat-header">独立型AI(sakai's AI)</div>
   <div id="chat-log"></div>
   <div id="input-area">
     <input type="text" id="user-input" placeholder="質問を入力してEnter...">
@@ -86,7 +86,6 @@
         const data = await response.json();
         document.getElementById(loadingId).remove(); 
 
-        // ⭕ あなたが指摘してくれた正しい [0] の形に完全修正しました！
         if (data.choices && data.choices[0] && data.choices[0].message) {
           const aiText = data.choices[0].message.content;
           appendMessage(aiText, "ai-msg");
@@ -99,7 +98,7 @@
         if (document.getElementById(loadingId)) {
           document.getElementById(loadingId).remove();
         }
-        appendMessage("エラー: 通信に失敗しました。Ciscoの遮断か、ネットワークエラーです。", "ai-msg");
+        appendMessage("エラー: 通信に失敗しました。", "ai-msg");
       }
     }
   });
