@@ -24,7 +24,7 @@
 <!-- 最初だけトークンを入力する画面 -->
 <div id="setup-area">
   <h3>🔑 GitHubトークンを入力してください</h3>
-  <p style="font-size:12px;color:#666;">（一度入力すればブラウザに記憶されます。コードには保存されないので安全です）</p>
+  <p style="font-size:12px;color:#666;">（一度入力すればブラウザに記憶されます）</p>
   <input type="password" id="token-input" placeholder="ghp_ から始まるトークンを貼り付け">
   <br>
   <button id="save-btn" onclick="saveToken()">チャットを始める</button>
@@ -32,7 +32,7 @@
 
 <!-- チャット画面 -->
 <div id="ai-container">
-  <div id="chat-header">🤖 独立稼働型マイAI (BAN対策版)</div>
+  <div id="chat-header">🤖 独立稼働型マイAI (完全修正版)</div>
   <div id="chat-log"></div>
   <div id="input-area">
     <input type="text" id="user-input" placeholder="質問を入力してEnter...">
@@ -42,7 +42,6 @@
 <script>
   let GITHUB_TOKEN = localStorage.getItem("my_github_token") || "";
 
-  // すでにトークンがあれば最初からチャットを開く
   if (GITHUB_TOKEN) {
     document.getElementById("setup-area").style.display = "none";
     document.getElementById("ai-container").style.display = "block";
@@ -72,7 +71,7 @@
       const loadingId = appendMessage("思考中...", "ai-msg");
 
       try {
-        const response = await fetch("https://azure.com", {
+        const response = await fetch("https://models.inference.ai.azure.com/chat/completions", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -87,6 +86,7 @@
         const data = await response.json();
         document.getElementById(loadingId).remove(); 
 
+        // ⚠️ data.choices[0].message の形に完全に修正しました
         if (data.choices && data.choices[0] && data.choices[0].message) {
           const aiText = data.choices[0].message.content;
           appendMessage(aiText, "ai-msg");
@@ -99,7 +99,7 @@
         if (document.getElementById(loadingId)) {
           document.getElementById(loadingId).remove();
         }
-        appendMessage("エラー: 通信に失敗しました。Ciscoの遮断の可能性があります。", "ai-msg");
+        appendMessage("エラー: 通信に失敗しました。Ciscoの遮断か、ネットワークエラーです。", "ai-msg");
       }
     }
   });
