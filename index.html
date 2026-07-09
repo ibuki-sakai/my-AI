@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>my AI Chat</title>
+  <style>
+    body { background: #f0f2f5; font-family: sans-serif; margin: 0; padding: 10px; }
+    #ai-container { max-width: 600px; margin: 20px auto; background: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); overflow: hidden; }
+    #chat-header { background: #24292e; color: white; padding: 15px; font-weight: bold; text-align: center; }
+    #chat-log { height: 400px; overflow-y: auto; padding: 15px; background: #fafafa; border-bottom: 1px solid #ddd; font-size: 14px; }
+    #chat-log div { margin-bottom: 12px; padding: 8px 12px; border-radius: 6px; max-width: 85%; line-height: 1.5; word-break: break-all; }
+    .user-msg { background: #007bff; color: white; margin-left: auto; text-align: left; }
+    .ai-msg { background: #e9ecef; color: #333; }
+    #input-area { padding: 10px; display: flex; background: white; }
+    #user-input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; outline: none; }
+    #user-input:focus { border-color: #007bff; }
+  </style>
+</head>
+<body>
+
+<div id="ai-container">
+  <div id="chat-header">🤖 独立稼働型マイAI (GitHub版)</div>
+  <div id="chat-log"></div>
+  <div id="input-area">
+    <input type="text" id="user-input" placeholder="質問を入力してEnter...">
+  </div>
+</div>
+
+<script>
+  const GITHUB_TOKEN = "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";
+
+  document.getElementById('user-input').addEventListener('keypress', async (e) => {
+    if (e.key === 'Enter') {
+      const inputField = e.target;
+      const prompt = inputField.value.trim();
+      if (!prompt) return;
+
+      appendMessage("あなた: " + prompt, "user-msg");
+      inputField.value = '';
+
+      const loadingId = appendMessage("思考中...", "ai-msg");
+
+      try {
+        const response = await fetch("https://azure.com", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${GITHUB_TOKEN}`
+          },
+          body: JSON.stringify({
+            model: "gpt-4o-mini", 
+            messages: [{ role: "user", content: prompt }]
+          })
+        });
+
+        const data = await response.json();
+        document.getElementById(loadingId).remove(); 
+
+        if (data.choices && data.choices[0] && data.choices[0].message) {
+          const aiText = data.choices[0].message.content;
+          appendMessage(aiText, "ai-msg");
+        } else if (data.error) {
+          appendMessage(`エラー: ${data.error.message}`, "ai-msg");
+        } else {
+          appendMessage("エラー: AIからの応答の形が正しくありませんでした。", "ai-msg");
+        }
+      } catch (error) {
+        if (document.getElementById(loadingId)) {
+          document.getElementById(loadingId).remove();
+        }
+        appendMessage("エラー: 通信に失敗しました。Ciscoの遮断か、GitHub側のCORS制限の可能性があります。", "ai-msg");
+      }
+    }
+  });
+
+  let msgCount = 0;
+  function appendMessage(text, className) {
+    const log = document.getElementById('chat-log');
+    msgCount++;
+    const id = "msg-" + msgCount;
+    
+    let formattedText = text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/\n/g, '<br>')
+      .replace(/`([^`]+)`/g, '<code style="background:#ddd;padding:2px 4px;border-radius:4px;font-family:monospace;">$1</code>');
+    
+    const msgDiv = document.createElement('div');
+    msgDiv.id = id;
+    msgDiv.className = className;
+    msgDiv.innerHTML = formattedText;
+    
+    log.appendChild(msgDiv);
+    log.scrollTop = log.scrollHeight; 
+    return id;
+  }
+</script>
+</body>
+</html>
