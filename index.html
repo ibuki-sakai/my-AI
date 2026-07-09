@@ -86,7 +86,7 @@
         const data = await response.json();
         document.getElementById(loadingId).remove(); 
 
-        // 配列の指定（[0]）を正しく修正しました
+        // ⭕ あなたが指摘してくれた正しい [0] の形に完全修正しました！
         if (data.choices && data.choices[0] && data.choices[0].message) {
           const aiText = data.choices[0].message.content;
           appendMessage(aiText, "ai-msg");
