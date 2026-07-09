@@ -6,7 +6,10 @@
   <title>my AI Chat</title>
   <style>
     body { background: #f0f2f5; font-family: sans-serif; margin: 0; padding: 10px; }
-    #ai-container { max-width: 600px; margin: 20px auto; background: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); overflow: hidden; }
+    #setup-area { max-width: 600px; margin: 50px auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; }
+    #token-input { width: 80%; padding: 10px; font-size: 14px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px; }
+    #save-btn { padding: 10px 20px; font-size: 14px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    #ai-container { max-width: 600px; margin: 20px auto; background: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); overflow: hidden; display: none; }
     #chat-header { background: #24292e; color: white; padding: 15px; font-weight: bold; text-align: center; }
     #chat-log { height: 400px; overflow-y: auto; padding: 15px; background: #fafafa; border-bottom: 1px solid #ddd; font-size: 14px; }
     #chat-log div { margin-bottom: 12px; padding: 8px 12px; border-radius: 6px; max-width: 85%; line-height: 1.5; word-break: break-all; }
@@ -14,13 +17,22 @@
     .ai-msg { background: #e9ecef; color: #333; }
     #input-area { padding: 10px; display: flex; background: white; }
     #user-input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; outline: none; }
-    #user-input:focus { border-color: #007bff; }
   </style>
 </head>
 <body>
 
+<!-- 最初だけトークンを入力する画面 -->
+<div id="setup-area">
+  <h3>🔑 GitHubトークンを入力してください</h3>
+  <p style="font-size:12px;color:#666;">（一度入力すればブラウザに記憶されます。コードには保存されないので安全です）</p>
+  <input type="password" id="token-input" placeholder="ghp_ から始まるトークンを貼り付け">
+  <br>
+  <button id="save-btn" onclick="saveToken()">チャットを始める</button>
+</div>
+
+<!-- チャット画面 -->
 <div id="ai-container">
-  <div id="chat-header">🤖 独立稼働型マイAI (GitHub版)</div>
+  <div id="chat-header">🤖 独立稼働型マイAI (BAN対策版)</div>
   <div id="chat-log"></div>
   <div id="input-area">
     <input type="text" id="user-input" placeholder="質問を入力してEnter...">
@@ -28,7 +40,25 @@
 </div>
 
 <script>
-  const GITHUB_TOKEN = "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";
+  let GITHUB_TOKEN = localStorage.getItem("my_github_token") || "";
+
+  // すでにトークンがあれば最初からチャットを開く
+  if (GITHUB_TOKEN) {
+    document.getElementById("setup-area").style.display = "none";
+    document.getElementById("ai-container").style.display = "block";
+  }
+
+  function saveToken() {
+    const input = document.getElementById("token-input").value.trim();
+    if (!input.startsWith("ghp_")) {
+      alert("ghp_ から始まる有効なクラシックトークンを入力してください。");
+      return;
+    }
+    localStorage.setItem("my_github_token", input);
+    GITHUB_TOKEN = input;
+    document.getElementById("setup-area").style.display = "none";
+    document.getElementById("ai-container").style.display = "block";
+  }
 
   document.getElementById('user-input').addEventListener('keypress', async (e) => {
     if (e.key === 'Enter') {
@@ -69,7 +99,7 @@
         if (document.getElementById(loadingId)) {
           document.getElementById(loadingId).remove();
         }
-        appendMessage("エラー: 通信に失敗しました。Ciscoの遮断か、GitHub側のCORS制限の可能性があります。", "ai-msg");
+        appendMessage("エラー: 通信に失敗しました。Ciscoの遮断の可能性があります。", "ai-msg");
       }
     }
   });
