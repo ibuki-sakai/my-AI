@@ -4,6 +4,20 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>学習アシスタントAI</title>
+  <!-- ★MathJaxライブラリの読み込み設定 -->
+  <script>
+    window.MathJax = {
+      chtml: {
+        matchFontHeight: false
+      },
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']]
+      }
+    };
+  </script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
   <style>
     body { background: #f0f2f5; font-family: sans-serif; margin: 0; padding: 10px; }
     #setup-area { max-width: 600px; margin: 50px auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; }
@@ -17,22 +31,20 @@
     .ai-msg { background: #e9ecef; color: #333; }
     #input-area { padding: 10px; display: flex; background: white; }
     #user-input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; outline: none; }
+    #user-input:disabled { background: #eee; cursor: not-allowed; }
   </style>
 </head>
 <body>
 
-<!-- 最初だけトークンを入力する画面 -->
 <div id="setup-area">
   <h3>GitHubトークンを入力してください</h3>
-  <p style="font-size:12px;color:#666;">
   <input type="password" id="token-input" placeholder="ghp_ または github_pat_ から始まるトークンを貼り付け">
-  <br>
+  <br><br>
   <button id="save-btn" onclick="saveToken()">チャットを始める</button>
 </div>
 
-<!-- チャット画面 -->
 <div id="ai-container">
-  <div id="chat-header">AI</div>
+  <div id="chat-header">AI学習アシスタント</div>
   <div id="chat-log"></div>
   <div id="input-area">
     <input type="text" id="user-input" placeholder="質問を入力してEnter...">
@@ -49,9 +61,9 @@
 
   function saveToken() {
     const input = document.getElementById("token-input").value.trim();
-     if (!input.startsWith("ghp_") && !input.startsWith("github_pat_")) {
-     alert("有効なGitHubトークンを入力してください。");
-     return;
+    if (!input.startsWith("ghp_") && !input.startsWith("github_pat_")) {
+      alert("有効なGitHubトークンを入力してください。");
+      return;
     }
     localStorage.setItem("my_github_token", input);
     GITHUB_TOKEN = input;
@@ -63,8 +75,9 @@
     if (e.key === 'Enter') {
       const inputField = e.target;
       const prompt = inputField.value.trim();
-      if (!prompt) return;
+      if (!prompt || inputField.disabled) return;
 
+      inputField.disabled = true;
       appendMessage("あなた: " + prompt, "user-msg");
       inputField.value = '';
 
@@ -84,21 +97,35 @@
         });
 
         const data = await response.json();
-        document.getElementById(loadingId).remove(); 
+        
+        const loadingEl = document.getElementById(loadingId);
+        if (loadingEl) loadingEl.remove(); 
 
-          if (data.choices && data.choices[0] && data.choices[0].message) {
+        if (data.choices && data.choices[0] && data.choices[0].message) {
           const aiText = data.choices[0].message.content;
-          appendMessage(aiText, "ai-msg");
+          const newMsgId = appendMessage(aiText, "ai-msg");
+          
+          // ★追加: 新しいメッセージが追加されたら、MathJaxで数式に変換する
+          if (window.MathJax && window.MathJax.typesetPromise) {
+            const newMsgEl = document.getElementById(newMsgId);
+            MathJax.typesetPromise([newMsgEl]).then(() => {
+              const log = document.getElementById('chat-log');
+              log.scrollTop = log.scrollHeight; // 数式展開後に再度スクロール最下部へ
+            });
+          }
+
         } else if (data.error) {
           appendMessage(`エラー: ${data.error.message}`, "ai-msg");
         } else {
           appendMessage("エラー: AIからの応答の形が正しくありませんでした。", "ai-msg");
         }
       } catch (error) {
-        if (document.getElementById(loadingId)) {
-          document.getElementById(loadingId).remove();
-        }
+        const loadingEl = document.getElementById(loadingId);
+        if (loadingEl) loadingEl.remove();
         appendMessage("エラー: 通信に失敗しました。", "ai-msg");
+      } finally {
+        inputField.disabled = false;
+        inputField.focus();
       }
     }
   });
@@ -109,10 +136,14 @@
     msgCount++;
     const id = "msg-" + msgCount;
     
-    let formattedText = text
+    // 数式の「<」や「>」が消えないよう、最低限の安全なエスケープに留める
+    let escapedText = text
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
+      .replace(/>/g, "&gt;");
+
+    // 改行とインラインコードの置換
+    let formattedText = escapedText
       .replace(/\n/g, '<br>')
       .replace(/`([^`]+)`/g, '<code style="background:#ddd;padding:2px 4px;border-radius:4px;font-family:monospace;">$1</code>');
     
