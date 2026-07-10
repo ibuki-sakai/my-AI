@@ -3,90 +3,60 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>数学特化型AI学習アシスタント</title>
-  <!-- 数式表示用のKaTeXライブラリを読み込み -->
-  <link rel="stylesheet" href="https://jsdelivr.net">
-  <script src="https://jsdelivr.net"></script>
-  <script src="https://jsdelivr.net"></script>
-  
+  <title>学習補助AI</title>
   <style>
     body { background: #f0f2f5; font-family: sans-serif; margin: 0; padding: 10px; }
     #setup-area { max-width: 600px; margin: 50px auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; }
     #token-input { width: 80%; padding: 10px; font-size: 14px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px; }
     #save-btn { padding: 10px 20px; font-size: 14px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; }
-    #ai-container { max-width: 700px; margin: 20px auto; background: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); overflow: hidden; display: none; }
-    #chat-header { background: #1e3a8a; color: white; padding: 15px; font-weight: bold; text-align: center; }
-    #chat-log { height: 500px; overflow-y: auto; padding: 15px; background: #fafafa; border-bottom: 1px solid #ddd; font-size: 15px; }
-    #chat-log div { margin-bottom: 12px; padding: 10px 14px; border-radius: 6px; max-width: 85%; line-height: 1.6; word-break: break-all; }
+    #ai-container { max-width: 600px; margin: 20px auto; background: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); overflow: hidden; display: none; }
+    #chat-header { background: #24292e; color: white; padding: 15px; font-weight: bold; text-align: center; }
+    #chat-log { height: 400px; overflow-y: auto; padding: 15px; background: #fafafa; border-bottom: 1px solid #ddd; font-size: 14px; }
+    #chat-log div { margin-bottom: 12px; padding: 8px 12px; border-radius: 6px; max-width: 85%; line-height: 1.5; word-break: break-all; }
     .user-msg { background: #007bff; color: white; margin-left: auto; text-align: left; }
     .ai-msg { background: #e9ecef; color: #333; }
     #input-area { padding: 10px; display: flex; background: white; }
     #user-input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; outline: none; }
-    
-    /* 数式表示の微調整 */
-    .katex-display { margin: 0.5em 0; overflow-x: auto; overflow-y: hidden; }
   </style>
 </head>
 <body>
 
+<!-- 最初だけトークンを入力する画面 -->
 <div id="setup-area">
   <h3>GitHubトークンを入力してください</h3>
-  <p style="font-size:12px;color:#666;">GitHub Models APIを利用するための個人用アクセストークンが必要です。</p>
+  <p style="font-size:12px;color:#666;">
   <input type="password" id="token-input" placeholder="ghp_ または github_pat_ から始まるトークンを貼り付け">
   <br>
   <button id="save-btn" onclick="saveToken()">チャットを始める</button>
 </div>
 
+<!-- チャット画面 -->
 <div id="ai-container">
-  <div id="chat-header">数学特化型AIアシスタント</div>
+  <div id="chat-header">AI</div>
   <div id="chat-log"></div>
   <div id="input-area">
-    <input type="text" id="user-input" placeholder="数学の質問や解けない問題を教えてください...">
+    <input type="text" id="user-input" placeholder="質問を入力してEnter...">
   </div>
 </div>
 
 <script>
   let GITHUB_TOKEN = localStorage.getItem("my_github_token") || "";
 
-  // 過去の会話履歴を保持する配列
-  let chatHistory = [];
-
-  // システムプロンプトでAIの役割と出力形式（LaTeX）を厳密に定義
-  const SYSTEM_PROMPT = `あなたは優秀で親切な数学の教師、および研究者です。
-ユーザーは数学の学習者です。以下のルールを厳密に守って回答してください。
-
-1. 答えをすぐに教えるのではなく、段階的なヒントや考え方のプロセスを提示して、ユーザーの理解を促してください。
-2. インライン数式（文中の数式）は必ず \\( と \\) で囲んで出力してください。例: \\(x^2 + y^2 = r^2\\)
-3. ディスプレイ数式（独立した行の数式）は必ず \\[ と \\] で囲んで出力してください。
-   例:
-   \\[
-   f(x) = \\int_{-\\infty}^{\\infty} e^{-x^2} dx
-   \\]
-4. Markdownの太字（**）などの装飾は使用しても構いませんが、数式記号（$）は絶対に使用せず、必ず上記の \\( \\) または \\[ \\] を使用してください。`;
-
   if (GITHUB_TOKEN) {
     document.getElementById("setup-area").style.display = "none";
     document.getElementById("ai-container").style.display = "block";
-    initChat();
   }
 
   function saveToken() {
     const input = document.getElementById("token-input").value.trim();
-    if (!input.startsWith("ghp_") && !input.startsWith("github_pat_")) {
-      alert("有効なGitHubトークンを入力してください。");
-      return;
+     if (!input.startsWith("ghp_") && !input.startsWith("github_pat_")) {
+     alert("有効なGitHubトークンを入力してください。");
+     return;
     }
     localStorage.setItem("my_github_token", input);
     GITHUB_TOKEN = input;
     document.getElementById("setup-area").style.display = "none";
     document.getElementById("ai-container").style.display = "block";
-    initChat();
-  }
-
-  function initChat() {
-    // 会話履歴の初期化（システムプロンプトを先頭にセット）
-    chatHistory = [{ role: "system", content: SYSTEM_PROMPT }];
-    appendMessage("こんにちは！数学の学習アシスタントです。計算の解き方、公式の証明、概念の解説など、何でも気軽に質問してください。数式も綺麗に表示できます！", "ai-msg", false);
   }
 
   document.getElementById('user-input').addEventListener('keypress', async (e) => {
@@ -95,14 +65,10 @@
       const prompt = inputField.value.trim();
       if (!prompt) return;
 
-      // ユーザーの入力を画面に表示（プレーンテキストとして処理）
-      appendMessage("あなた: " + prompt, "user-msg", false);
+      appendMessage("あなた: " + prompt, "user-msg");
       inputField.value = '';
 
-      // APIに送る会話履歴にユーザーの発言を追加
-      chatHistory.push({ role: "user", content: prompt });
-
-      const loadingId = appendMessage("思考中...", "ai-msg", false);
+      const loadingId = appendMessage("思考中...", "ai-msg");
 
       try {
         const response = await fetch("https://models.github.ai/inference/chat/completions", {
@@ -113,73 +79,49 @@
           },
           body: JSON.stringify({
             model: "gpt-4o-mini", 
-            messages: chatHistory // 履歴全体を送信
+            messages: [{ role: "user", content: prompt }]
           })
         });
 
         const data = await response.json();
         document.getElementById(loadingId).remove(); 
 
-        if (data.choices && data.choices[0] && data.choices[0].message) {
+          if (data.choices && data.choices[0] && data.choices[0].message) {
           const aiText = data.choices[0].message.content;
-          
-          // AIの返答を履歴に追加
-          chatHistory.push({ role: "assistant", content: aiText });
-          
-          // AIの返答を数式レンダリング付きで表示
-          appendMessage(aiText, "ai-msg", true);
+          appendMessage(aiText, "ai-msg");
         } else if (data.error) {
-          appendMessage(`エラー: ${data.error.message}`, "ai-msg", false);
+          appendMessage(`エラー: ${data.error.message}`, "ai-msg");
         } else {
-          appendMessage("エラー: AIからの応答の形が正しくありませんでした。", "ai-msg", false);
+          appendMessage("エラー: AIからの応答の形が正しくありませんでした。", "ai-msg");
         }
       } catch (error) {
         if (document.getElementById(loadingId)) {
           document.getElementById(loadingId).remove();
         }
-        appendMessage("エラー: 通信に失敗しました。", "ai-msg", false);
+        appendMessage("エラー: 通信に失敗しました。", "ai-msg");
       }
     }
   });
 
   let msgCount = 0;
-  function appendMessage(text, className, isAI) {
+  function appendMessage(text, className) {
     const log = document.getElementById('chat-log');
     msgCount++;
     const id = "msg-" + msgCount;
     
+    let formattedText = text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/\n/g, '<br>')
+      .replace(/`([^`]+)`/g, '<code style="background:#ddd;padding:2px 4px;border-radius:4px;font-family:monospace;">$1</code>');
+    
     const msgDiv = document.createElement('div');
     msgDiv.id = id;
     msgDiv.className = className;
+    msgDiv.innerHTML = formattedText;
     
-    if (isAI) {
-      // AIメッセージの場合は、Markdownの改行やコードブロックを最低限整形したあとKaTeXでレンダリング
-      let formattedText = text
-        .replace(/\n/g, '<br>')
-        .replace(/`([^`]+)`/g, '<code style="background:#ddd;padding:2px 4px;border-radius:4px;font-family:monospace;">$1</code>');
-      
-      msgDiv.innerHTML = formattedText;
-      log.appendChild(msgDiv);
-      
-      // KaTeXの自動レンダリングスクリプトを実行
-      renderMathInElement(msgDiv, {
-        delimiters: [
-          {left: '\\[', right: '\\]', display: true},
-          {left: '\\(', right: '\\)', display: false}
-        ],
-        throwOnError: false
-      });
-    } else {
-      // ユーザーメッセージやシステムメッセージはエスケープして安全に表示
-      let safeText = text
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/\n/g, '<br>');
-      msgDiv.innerHTML = safeText;
-      log.appendChild(msgDiv);
-    }
-    
+    log.appendChild(msgDiv);
     log.scrollTop = log.scrollHeight; 
     return id;
   }
